@@ -8,7 +8,9 @@
 
 // How many NeoPixels are attached to the Arduino?
 #define LED_COUNT 16
- 
+
+unsigned int last_time = 0;
+
 Arduino_DataBus *bus = new Arduino_ESP32SPI(
      33 /*DC or DE*/, 15 /* CS */,
     14 /* SCK */, 13 /* MOSI */,  12  /*  12 MISO */, HSPI, true);
@@ -23,7 +25,6 @@ void setTimezone(String timezone){
   setenv("TZ",timezone.c_str(),1);  //  Now adjust the TZ.  Clock settings are adjusted to show the new local time
   tzset();
 }
- 
 
 void initTime(String timezone){
   struct tm timeinfo;
@@ -71,6 +72,7 @@ while(WiFi.status() != WL_CONNECTED){
 Serial.println();
 Serial.print("IP address: ");
 Serial.println(WiFi.localIP());
+initTime("EST5EDT,M3.2.0,M11.1.0");
 strip.begin();           // INITIALIZE NeoPixel strip object (REQUIRED)
 strip.show();            // Turn OFF all pixels ASAP
 strip.setBrightness(255); // Set BRIGHTN
@@ -78,15 +80,37 @@ panel->begin();
 panel->fillScreen(RED);
 panel->setCursor(10,10);
 panel->setTextColor(BLACK);
-panel->println("Shabbat in five minutes")
+struct tm timeinfo;
+if(!getLocalTime(&timeinfo)){
+  Serial.println("Failed to obtain time 1");
+}
+panel->println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
+
+
+panel->println("Shabbat in five minutes");
 
 }
  
 
 void loop() {
+
+if(millis()-last_time > 1000){
+  last_time = millis();
+  panel->fillScreen(RED);
+  panel->setCursor(10,10);
+  panel->setTextColor(BLACK);
+  struct tm timeinfo;
+  if(!getLocalTime(&timeinfo)){
+    Serial.println("Failed to obtain time 1");  
+  }
+  panel->println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
+}
+
+  /*
   for(int i=0; i<strip.numPixels(); i++) { // For each pixel in strip...
     strip.setPixelColor(i, strip.Color(255,   0,   0));         //  Set pixel's color (in RAM)
     strip.show();                          //  Update strip to match
     delay(200);                           //  Pause for a moment
   }
+  */
 }
